@@ -6,11 +6,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
-import  jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
-    UserDao userDao;
+    private static final Logger LOGGER = Logger.getLogger(RegisterServlet.class.getName());
+    private static final String DASHBOARD_URL = "dashboard.jsp";
+    private static final String REGISTER_URL = "register.jsp?error=true";
+    
+    private UserDao userDao;
 
     @Override
     public void init() throws ServletException {
@@ -24,21 +30,19 @@ public class RegisterServlet extends HttpServlet {
         String email = req.getParameter("email");
         String password = req.getParameter("password");
 
-        try{
-            HttpSession session = req.getSession();
-            if(userDao.registerUser(name, email, password)){
-
+        HttpSession session = req.getSession();
+        try {
+            if (userDao.registerUser(name, email, password)) {
                 session.setAttribute("email", email);
-                resp.sendRedirect("dashboard.jsp");
+                resp.sendRedirect(DASHBOARD_URL);
+                LOGGER.info("User registered successfully: " + email);
+            } else {
+                resp.sendRedirect(REGISTER_URL);
+                LOGGER.warning("Registration failed for user: " + email);
             }
-            else{
-                resp.sendRedirect("register.jsp?error=true");
-            }
-
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOGGER.log(Level.SEVERE, "Error during registration for user: " + email, e);
+            resp.sendRedirect(REGISTER_URL);
         }
-
-        System.out.println(email + " " + password);
     }
 }
